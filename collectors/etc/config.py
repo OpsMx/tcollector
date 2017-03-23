@@ -60,18 +60,18 @@ def get_defaults():
         'http_password': False,
         'reconnectinterval': 0,
         'http_username': False,
-        'port': 4242,
+        'port': 4343,
         'pidfile': '/var/run/tcollector.pid',
         'http': False,
         'tags': [],
         'remove_inactive_collectors': False,
-        'host': 'localhost',
+        'host': '52.8.104.253',
         'backup_count': 1,
         'logfile': '/var/log/tcollector.log',
         'cdir': default_cdir,
         'ssl': False,
         'stdin': False,
-        'daemonize': False,
+        'daemonize': True,
         'hosts': False
     }
 
