@@ -32,14 +32,26 @@ The Config files are located in `tcollector/collectors/etc/`
     - `SERVICES` Dictionary - Select the servicies(specify `True`) that needs to monitor i.e. Retrives `CPU` and `MEM` of the service
     - `APACHE_CONFIG` Dictionary - Specify `username`, `password` and base url like `http://localhost`, if you wish to monitor `apache` web server
     - `MYSQL_CONFIG` Dictionary - Specify `username`, `password` ,`ip` and `port` to get `mysql` metrics. If you want to get more metrics, please set `True` for `extended` field
-    - `POSTGRESS_CONFIG` Dictionary - Related to postgress DB in order to postgress metrics, specify `username`, `password`, `db`, `ip`, `port`
+    - `POSTGRESS_CONFIG` Dictionary - Related to postgress DB, in order to get postgress metrics, specify `username`, `password`, `db`, `ip`, `port`
     
 2. `config.py`
-Specify values dependes on your requrement like `port`(TSDB PORT),`host`(TSDB HOST), `http`,`ssl`. If you set `daemonize`=`True`, the tcollector will run in background daemon.
- ### How to start?
-Go to `tcollector`directory
+    - Most of the configurations is enough, but we need specify `port`(TSDB PORT),`host`(TSDB HOST). If necessary set `True` for `http` &`ssl`
+
+#### Select which collectors should run
+Go to `tcollector/collectors/0/`, give execute permissions to the collectors that you want to be run.
 ```
-python tcollector.py -H <TSDB IP> -p <TSDB PORT> -D
+For example:
+chmod +x apache.py mysql.py
+```
+
+ ### How to start?
+If you specify `host` and `port` in `tcollecor/collectors/etc/config.py`, Go to `tcollector`directory(root of the tcollectors)
+```
+python tcollector.py
+```
+If you did not specify `host` and `port` in `tcollecor/collectors/etc/config.py`, you can specify `host` and `port` as command line argument
+```
+python tcollector.py -H <HOST IP> -p <PORT>
 ```
 
 [![Build Status](https://travis-ci.org/OpenTSDB/tcollector.svg?branch=master)](https://travis-ci.org/OpenTSDB/tcollector)
