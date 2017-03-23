@@ -7,9 +7,7 @@ handles the communication with the TSDs.
 
 For more info, see the [TCollector Documentation](http://www.opentsdb.net/tcollector.html)
 
-#### Download
-`sudo wget -O /tmp/opsmx_tcollector.tar <URL> && sudo tar -xvf /tmp/opsmx_tcollector.tar -C /opt/`
-#### Directory Tree
+### Directory Tree
 ```
 tcolletor
 |-- collectors
@@ -24,7 +22,7 @@ tcolletor
 |-- rpm
 `-- stumbleupon
 ```
-#### The Config files
+### The Config files
 The Config files are located in `tcollector/collectors/etc/`
 1. `opsmxconf.py` related to opsmx collectors configurations.(The following fields need to specify in `opsmxconf.py`)
     - `GLOBAL_COLLECTORS_INTERVAL` - Used to apply unique time interval for all collectors
@@ -37,15 +35,17 @@ The Config files are located in `tcollector/collectors/etc/`
 2. `config.py`
     - Most of the configurations is enough, but we need specify `port`(TSDB PORT),`host`(TSDB HOST). If necessary set `True` for `http` &`ssl`
 
-#### Select which collectors should run
+
+### Select which collectors should run
 Go to `tcollector/collectors/0/`, give execute permissions to the collectors that you want to be run.
 ```
 For example:
 chmod +x apache.py mysql.py
 ```
 
- ### How to start?
-If you specify `host` and `port` in `tcollecor/collectors/etc/config.py`, Go to `tcollector`directory(root of the tcollectors)
+### How to download and start?
+#### 1. MANUALL download and MANUALL start
+You should specify `host` and `port` in `tcollecor/collectors/etc/config.py` and go to `tcollector`directory(root of the tcollectors) run
 ```
 python tcollector.py
 ```
@@ -53,5 +53,18 @@ If you did not specify `host` and `port` in `tcollecor/collectors/etc/config.py`
 ```
 python tcollector.py -H <HOST IP> -p <PORT>
 ```
+
+#### 2. Download and install as init script
+In this step, `host` and `port` are already configured, but you need to select which scripts should run by `chmod +x <collector name>` in `tcollector/collectors/0/`
+```
+sudo wget -O installer.py https://raw.githubusercontent.com/OpsMx/tcollector/master/installer.sh && chmod +x installer.py && sh installer.py
+
+service tcollector start
+service tcollector stop
+service tcollector restart
+service tcollector uninstall
+```
+
+
 
 [![Build Status](https://travis-ci.org/OpenTSDB/tcollector.svg?branch=master)](https://travis-ci.org/OpenTSDB/tcollector)
