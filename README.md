@@ -45,6 +45,10 @@ chmod +x apache.py mysql.py
 
 ### How to download and start?
 #### 1. MANUALL download and MANUALL start
+Clone the repository
+```
+git clone https://github.com/OpsMx/tcollector.git
+```
 You should specify `host` and `port` in `tcollecor/collectors/etc/config.py` and go to `tcollector`directory(root of the tcollectors) run
 ```
 python tcollector.py
