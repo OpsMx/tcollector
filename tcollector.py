@@ -421,7 +421,7 @@ class SenderThread(threading.Thread):
 
     def __init__(self, reader, dryrun, hosts, self_report_stats, tags,
                  reconnectinterval=0, http=False, http_username=None,
-                 http_password=None, ssl=False, maxtags=8):
+                 http_password=None, ssl=False, maxtags=8, url_path="/api/put", chunking=False):
         """Constructor.
 
         Args:
@@ -437,7 +437,6 @@ class SenderThread(threading.Thread):
           tags: A dictionary of tags to append for every data point.
         """
         super(SenderThread, self).__init__()
-
         self.dryrun = dryrun
         self.reader = reader
         self.tags = sorted(tags.items()) # dictionary transformed to list
@@ -459,6 +458,8 @@ class SenderThread(threading.Thread):
         self.sendq = []
         self.self_report_stats = self_report_stats
         self.maxtags = maxtags # The maximum number of tags TSD will accept.
+        self.url_path = url_path
+        self.chunking = chunking
 
     def pick_connection(self):
         """Picks up a random host/port connection."""
@@ -730,10 +731,7 @@ class SenderThread(threading.Thread):
             protocol = "https"
         else:
             protocol = "http"
-        details=""
-        if LOG.level == logging.DEBUG:
-            details="?details"
-        return "%s://%s:%s/api/put%s" % (protocol, self.host, self.port, details)
+        return "%s://%s:%s%s" % (protocol, self.host, self.port, self.url_path)
 
     def send_data_via_http(self):
         """Sends outstanding data in self.sendq to TSD in one HTTP API call."""
@@ -776,27 +774,39 @@ class SenderThread(threading.Thread):
             self.pick_connection()
 
         url = self.build_http_url()
-        LOG.debug("Sending metrics to url", url)
-        req = urllib2.Request(url)
-        if self.http_username and self.http_password:
-          req.add_header("Authorization", "Basic %s"
+        if self.chunking:
+            ChunkSize=64
+        else:
+            ChunkSize=len(metrics)
+        for i in xrange(0, len(metrics), ChunkSize):
+            try:
+                chunked_metrics=metrics[i:i+ChunkSize]
+                LOG.debug("Sending metrics to url", url)
+                req = urllib2.Request(url)
+                if self.http_username and self.http_password:
+                    req.add_header("Authorization", "Basic %s"
                          % base64.b64encode("%s:%s" % (self.http_username, self.http_password)))
-        req.add_header("Content-Type", "application/json")
-        try:
-            response = urllib2.urlopen(req, json.dumps(metrics))
-            LOG.debug("Received response %s %s", response.getcode(), response.read().rstrip('\n'))
-            # clear out the sendq
-            self.sendq = []
-            # print "Got response code: %s" % response.getcode()
-            # print "Content:"
-            # for line in response:
-            #     print line,
-            #     print
-        except urllib2.HTTPError, e:
-            LOG.error("Got error %s %s", e, e.read().rstrip('\n'))
-            # for line in http_error:
-            #   print line,
-
+                
+                req.add_header("Content-Type", "application/json")
+                response = urllib2.urlopen(req, json.dumps(chunked_metrics))
+                LOG.debug("Received response %s %s", response.getcode(), response.read().rstrip('\n'))
+                print chunked_metrics
+                print "Chunked JSON ",len(chunked_metrics)
+                print "Original JSON",len(metrics)
+                print "Response Code",response.getcode()
+                print "URL          ",url
+                # clear out the sendq
+                self.sendq = []
+                # print "Got response code: %s" % response.getcode()
+                # print "Content:"
+                # for line in response:
+                #     print line,
+                #     print
+            except urllib2.HTTPError, e:
+                print("Got error %s %s", e, e.read().rstrip('\n'))
+                # for line in http_error:
+                #   print line,
+        print "****** THE END ******"
 
 def setup_logging(logfile=DEFAULT_LOG, max_bytes=None, backup_count=None):
     """Sets up logging and associated handlers."""
@@ -837,11 +847,13 @@ def parse_cmdline(argv):
             'reconnectinterval': 0,
             'http_username': False,
             'port': 4242,
+            'host': 'localhost',
+            'url_path':'/apt/put',
+            'chunk_size':0,
             'pidfile': '/var/run/tcollector.pid',
             'http': False,
             'tags': [],
             'remove_inactive_collectors': False,
-            'host': 'localhost',
             'backup_count': 1,
             'logfile': '/var/log/tcollector.log',
             'cdir': default_cdir,
@@ -941,6 +953,10 @@ def parse_cmdline(argv):
                       help='Password to use for HTTP Basic Auth when sending the data via HTTP')
     parser.add_option('--ssl', dest='ssl', action='store_true', default=defaults['ssl'],
                       help='Enable SSL - used in conjunction with http')
+    parser.add_option('--url-path', dest='url_path', action='store_true', default=defaults['url_path'],
+                      help='Adds custom URL path instead of using default URL path /api/put')
+    parser.add_option('--chunking', dest='chunking', action='store_true', default=defaults['chunking'],
+                      help='For HTTP, the orignal TSDB is not accepting more than 64')
     (options, args) = parser.parse_args(args=argv[1:])
     if options.dedupinterval < 0:
         parser.error('--dedup-interval must be at least 0 seconds')
@@ -1063,12 +1079,11 @@ def main(argv):
         options.hosts = [splitHost(host) for host in options.hosts.split(",")]
         if options.host != "localhost" or options.port != DEFAULT_PORT:
             options.hosts.append((options.host, options.port))
-
     # and setup the sender to start writing out to the tsd
     sender = SenderThread(reader, options.dryrun, options.hosts,
                           not options.no_tcollector_stats, tags, options.reconnectinterval,
                           options.http, options.http_username,
-                          options.http_password, options.ssl, options.maxtags)
+                          options.http_password, options.ssl, options.maxtags, options.url_path, options.chunking)
     sender.start()
     LOG.info('SenderThread startup complete')
 
