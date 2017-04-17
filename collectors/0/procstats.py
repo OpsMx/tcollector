@@ -20,7 +20,7 @@ import sys
 import time
 import glob
 
-from collectors.lib import utils
+#from collectors.lib import utils
 
 COLLECTION_INTERVAL = 15  # seconds
 NUMADIR = "/sys/devices/system/node"
@@ -107,7 +107,7 @@ def main():
         f_scaling_cur[cpu_no] = open(f_scaling % (cpu_no,"scaling_cur"), "r")
 
     numastats = find_sysfs_numa_stats()
-    utils.drop_privileges()
+    #utils.drop_privileges()
 
     while True:
         # proc.uptime
@@ -122,17 +122,26 @@ def main():
         # proc.meminfo
         f_meminfo.seek(0)
         ts = int(time.time())
+        mem_util=dict()
+        mem_total=None
+        mem_free=None
         for line in f_meminfo:
             m = re.match("(\w+):\s+(\d+)\s+(\w+)", line)
             if m:
                 if m.group(3).lower() == 'kb':
                     # convert from kB to B for easier graphing
-                    value = str(int(m.group(2)) * 1024)
+                    value = float(m.group(2)) * 1024
                 else:
-                    value = m.group(2)
-                print ("proc.meminfo.%s %d %s"
-                        % (m.group(1).lower(), ts, value))
-
+                    value = float(m.group(2))
+                if m.group(1)=="MemTotal":
+                    mem_total=value
+                if m.group(1)=="MemFree":
+                    mem_free=value
+                print ("proc.meminfo.%s %d %d" % (m.group(1).lower(), ts, value))
+        if mem_free and mem_total:
+            percent=((mem_total-mem_free)/mem_total)*100
+            print("proc.meminfo.util %d %f" % (ts,percent))
+        
         # proc.vmstat
         f_vmstat.seek(0)
         ts = int(time.time())
