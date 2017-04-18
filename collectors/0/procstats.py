@@ -20,9 +20,14 @@ import sys
 import time
 import glob
 
-#from collectors.lib import utils
+from collectors.lib import utils
+from collectors.etc import opsmxconf
 
-COLLECTION_INTERVAL = 15  # seconds
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=10
+
 NUMADIR = "/sys/devices/system/node"
 
 
@@ -90,7 +95,6 @@ def main():
     f_loadavg = open("/proc/loadavg", "r")
     f_entropy_avail = open("/proc/sys/kernel/random/entropy_avail", "r")
     f_interrupts = open("/proc/interrupts", "r")
-
     f_scaling = "/sys/devices/system/cpu/cpu%s/cpufreq/%s_freq"
     f_scaling_min  = dict([])
     f_scaling_max  = dict([])
@@ -107,8 +111,7 @@ def main():
         f_scaling_cur[cpu_no] = open(f_scaling % (cpu_no,"scaling_cur"), "r")
 
     numastats = find_sysfs_numa_stats()
-    #utils.drop_privileges()
-
+    utils.drop_privileges()
     while True:
         # proc.uptime
         f_uptime.seek(0)
@@ -161,6 +164,7 @@ def main():
             if not m:
                 continue
             if m.group(1).startswith("cpu"):
+                fields = m.group(2).split()
                 cpu_m = re.match("cpu(\d+)", m.group(1))
                 if cpu_m:
                     metric_percpu = '.percpu'
@@ -168,14 +172,22 @@ def main():
                 else:
                     metric_percpu = ''
                     tags = ''
-                fields = m.group(2).split()
+                    #CPU Utilization of CPU %
+                    # ['348826', '45244', '61469', '1544072', '31626', '4', '1295', '0', '0', '0']
+                    int_fields=map(float,fields)
+                    total_cpu=sum(int_fields)
+                    cpu_idle=sum(int_fields[3:5]) #Total CPU Idle Time since the boot
+                    cpu_time=total_cpu-cpu_idle #Total CPU Time since the boot
+                    cpu_percent=(cpu_time/total_cpu)*100
+                    print "proc.stat.cpu.util %d %s" % (ts, cpu_percent)
+            
                 cpu_types = ['user', 'nice', 'system', 'idle', 'iowait',
-                    'irq', 'softirq', 'guest', 'guest_nice']
+                    'irq', 'softirq', 'steal', 'guest', 'guest_nice']
 
                 # We use zip to ignore fields that don't exist.
                 for value, field_name in zip(fields, cpu_types):
-                    print "proc.stat.cpu%s %d %s type=%s%s" % (metric_percpu,
-                        ts, value, field_name, tags)
+                    print "proc.stat.cpu%s %d %s type=%s%s" % (metric_percpu,ts, value, field_name, tags)
+                        
             elif m.group(1) == "intr":
                 print ("proc.stat.intr %d %s"
                         % (ts, m.group(2).split()[0]))
