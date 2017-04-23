@@ -185,22 +185,29 @@ def main():
                 ret = is_device(device, 0)
                 # if a device or a partition, calculate the svctm/await/util
                 if ret:
-                    stats = dict(zip(FIELDS_DISK, values[3:]))
+                    conv_values=map(float, values[3:]) # Converting values to float
+                    stats = dict(zip(FIELDS_DISK, conv_values))
+                    
+                    # Calculating 'avgrq-sz'
+                    avgrq_sz=(stats.get("write_sectors")+stats.get("read_sectors"))/(stats.get("read_requests")+stats.get("write_requests"))
+                    print("%s%s %d %.2f dev=%s" 
+                          % (metric, "avgrq_sz", ts, avgrq_sz, device))
+                    
                     if not device in prev_stats:
                         prev_stats[device] = init_stats
-                    rd_ios = float(stats.get("read_requests"))
-                    wr_ios = float(stats.get("write_requests"))
+                    rd_ios = stats.get("read_requests")
+                    wr_ios = stats.get("write_requests")
                     nr_ios = rd_ios + wr_ios
                     prev_rd_ios = float(prev_stats[device].get("read_requests"))
                     prev_wr_ios = float(prev_stats[device].get("write_requests"))
                     prev_nr_ios = prev_rd_ios + prev_wr_ios
                     tput = ((nr_ios - prev_nr_ios) * float(HZ) / float(itv))
-                    util = ((float(stats.get("msec_total")) - float(prev_stats[device].get("msec_total"))) * float(HZ) / float(itv))
+                    util = ((stats.get("msec_total") - float(prev_stats[device].get("msec_total"))) * float(HZ) / float(itv))
                     svctm = 0.0
                     await = 0.0
                     r_await = 0.0
                     w_await = 0.0
-
+                    
                     if tput:
                         svctm = util / tput
 
@@ -209,11 +216,11 @@ def main():
                     prev_rd_ticks = prev_stats[device].get("msec_read")
                     prev_wr_ticks = prev_stats[device].get("msec_write")
                     if rd_ios != prev_rd_ios:
-                        r_await = (float(rd_ticks) - float(prev_rd_ticks) ) / float(rd_ios - prev_rd_ios)
+                        r_await = (rd_ticks - float(prev_rd_ticks) ) / float(rd_ios - prev_rd_ios)
                     if wr_ios != prev_wr_ios:
                         w_await = (float(wr_ticks) - float(prev_wr_ticks) ) / float(wr_ios - prev_wr_ios)
                     if nr_ios != prev_nr_ios:
-                        await = (float(rd_ticks) + float(wr_ticks) - float(prev_rd_ticks) - float(prev_wr_ticks)) / float(nr_ios - prev_nr_ios)
+                        await = (rd_ticks + float(wr_ticks) - float(prev_rd_ticks) - float(prev_wr_ticks)) / float(nr_ios - prev_nr_ios)
                     print("%s%s %d %.2f dev=%s"
                           % (metric, "svctm", ts, svctm, device))
                     print("%s%s %d %.2f dev=%s"
