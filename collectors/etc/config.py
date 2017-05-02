@@ -51,7 +51,7 @@ def get_defaults():
         'verbose': False,
         'no_tcollector_stats': False,
         'evictinterval': 6000,
-        'dedupinterval': 300,
+        'dedupinterval': 0,
         'deduponlyzero': False,
         'allowed_inactivity_time': 600,
         'dryrun': False,
