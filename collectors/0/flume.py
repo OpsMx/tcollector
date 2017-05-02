@@ -39,13 +39,18 @@ import sys
 import time
 
 from collectors.lib import utils
+from collectors.etc import opsmxconf
 
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=15
+    
 try:
   from collectors.etc import flume_conf
 except ImportError:
   flume_conf = None
 
-COLLECTION_INTERVAL = 15  # seconds
 DEFAULT_TIMEOUT = 10.0    # seconds
 FLUME_HOST = "localhost"
 FLUME_PORT = 34545
