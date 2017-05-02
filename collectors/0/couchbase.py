@@ -16,11 +16,17 @@ import re
 
 from collectors.etc import couchbase_conf
 from collectors.lib import utils
+from collectors.etc import opsmxconf
 
 CONFIG = couchbase_conf.get_config()
-COLLECTION_INTERVAL = CONFIG['collection_interval']
 COUCHBASE_INITFILE = CONFIG['couchbase_initfile']
 
+
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=CONFIG['interval']
+    
 KEYS = frozenset( [
                   'bucket_active_conns',
                   'cas_hits',
