@@ -74,6 +74,12 @@ from subprocess import Popen, PIPE
 
 from collectors.lib import utils
 from collectors.etc import g1gc_conf
+from collectors.etc import opsmxconf
+
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=g1gc_conf.get_interval()
 
 GC_START_TIME_PATTERN = 1
 PARALLEL_TIME_PATTERN = 2
@@ -392,7 +398,6 @@ def process_gc_log(collector):
 
 def main():
 
-    interval = g1gc_conf.get_interval()
     config = g1gc_conf.get_gc_config()
     counters = {'young': 0, 'mixed': 0, 'initialmark': 0,
                 'remark': 0, 'fullgc': 0}
@@ -410,7 +415,7 @@ def main():
     while True:
         process_gc_log(collector)
         sys.stdout.flush()
-        time.sleep(interval)
+        time.sleep(COLLECTION_INTERVAL)
 
 if __name__ == '__main__':
     exit(main())
