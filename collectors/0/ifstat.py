@@ -19,8 +19,12 @@ import time
 import re
 
 from collectors.lib import utils
+from collectors.etc import opsmxconf
 
-interval = 15  # seconds
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=15
 
 # /proc/net/dev has 16 fields, 8 for receive and 8 for transmit,
 # defined below.
@@ -89,7 +93,7 @@ def main():
                       % (FIELDS[i], ts, stats[i], intf, direction(i)))
 
         sys.stdout.flush()
-        time.sleep(interval)
+        time.sleep(COLLECTION_INTERVAL)
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -84,8 +84,12 @@ import socket
 import sys
 import time
 import md5
+from collectors.etc import opsmxconf
 
-COLLECTION_INTERVAL = 10  # seconds
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=10
 
 # BYTES_FIELDS is individual fields in the 'bytes:  '   line
 BYTES_FIELDS = ['normalread', 'normalwrite', 'directread', 'directwrite', 'serverread', 'serverwrite', 'readpages', 'writepages']
