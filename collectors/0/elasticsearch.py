@@ -29,9 +29,13 @@ import re
 
 from collectors.lib import utils
 from collectors.etc import elasticsearch_conf
+from collectors.etc import opsmxconf
 
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=15
 
-COLLECTION_INTERVAL = 15  # seconds
 DEFAULT_TIMEOUT = 10.0    # seconds
 
 # regexes to separate differences in version numbers
