@@ -11,7 +11,7 @@ from collectors.lib import utils
 try:
     import MySQLdb
 except ImportError:
-    utils.err("Error: Missing `MySQLb' module, please install")
+    utils.err("Error: Missing `MySQLb' module, please install it by running >'pip install MySQL-python'")
     sys.exit(1)
 
 
@@ -25,7 +25,6 @@ mysqlport=opsmxconf.MYSQL_CONFIG["port"]
 mysqluser=opsmxconf.MYSQL_CONFIG["username"]
 mysqlpasswd=opsmxconf.MYSQL_CONFIG["password"]
 Extend=opsmxconf.MYSQL_CONFIG["extended"]
-
 MYSQL_VARS = [
     'binlog_stmt_cache_size',
     'innodb_additional_mem_pool_size',
@@ -288,7 +287,7 @@ def get_mysql_conn():
         conn= MySQLdb.connect(host=mysqlhost, port=mysqlport, user=mysqluser, passwd=mysqlpasswd)
         return conn
     except MySQLdb.Error:
-        util.err("Error: Not able to connect to host: "+mysqlhost)
+        utils.err("Error: Not able to connect to host: "+mysqlhost)
         return None
 
 def mysql_query(conn, query):
@@ -536,4 +535,8 @@ def main():
 if __name__ == "__main__":
     sys.stdin.close()
     main()
+    
+        
+        
+
  

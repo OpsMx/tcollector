@@ -54,6 +54,12 @@ import sys
 import time
 
 from collectors.lib import utils
+from collectors.etc import opsmxconf
+
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=60
 
 
 USERS = ("root", "www-data", "mysql")
@@ -148,8 +154,6 @@ def main(unused_args):
     except OSError, e:
       print >>sys.stderr, "warning: failed to self-renice:", e
 
-    interval = 60
-
     # resolve the list of users to match on into UIDs
     uids = {}
     for user in USERS:
@@ -188,27 +192,23 @@ def main(unused_args):
                     # pylint: disable=W0612
                     (num, src, dst, state, queue, when, retrans,
                      uid, timeout, inode) = line.split(None, 9)
+                    #print line.split(None, 9)
                 except ValueError:  # Malformed line
                     continue
 
                 if num == "sl":  # header
                     continue
-
                 srcport = src.split(":")[1]
                 dstport = dst.split(":")[1]
                 srcport = int(srcport, 16)
                 dstport = int(dstport, 16)
                 service = PORTS.get(srcport, "other")
                 service = PORTS.get(dstport, service)
-
                 if is_public_ip(dst) or is_public_ip(src):
                     endpoint = "external"
                 else:
                     endpoint = "internal"
-
-
                 user = uids.get(uid, "other")
-
                 key = "state=" + TCPSTATES[state] + " endpoint=" + endpoint + \
                       " service=" + service + " user=" + user
                 if key in counter:
@@ -224,12 +224,14 @@ def main(unused_args):
                         key = ("state=%s endpoint=%s service=%s user=%s"
                                % (TCPSTATES[state], endpoint, service, user))
                         if key in counter:
-                            print "proc.net.tcp", ts, counter[key], key
+                            print "proc.net.tcp {} {} {}".format(ts, counter[key], key)
+                            pass
                         else:
-                            print "proc.net.tcp", ts, "0", key
+                            print "proc.net.tcp {} {} {}".format(ts, 0, key)
+                            pass
 
         sys.stdout.flush()
-        time.sleep(interval)
+        time.sleep(COLLECTION_INTERVAL)
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))

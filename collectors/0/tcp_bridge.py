@@ -19,6 +19,7 @@ import sys
 import time
 from collectors.lib import utils
 from thread import *
+from collectors.lib import utils
 
 try:
     from collectors.etc import tcp_bridge_conf

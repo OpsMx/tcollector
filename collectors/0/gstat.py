@@ -52,13 +52,22 @@ import signal
 import os
 
 from collectors.lib import utils
+from collectors.etc import opsmxconf
 
 try:
     from collectors.etc import gstat_conf
 except ImportError:
     gstat_conf = None
 
-DEFAULT_COLLECTION_INTERVAL=15
+collection_filter=".*"
+if(gstat_conf):
+    config = gstat_conf.get_config()
+    collection_filter=config['collection_filter']
+
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=config['collection_interval']
 
 signal_received = None
 def handlesignal(signum, stack):
@@ -68,13 +77,6 @@ def handlesignal(signum, stack):
 def main():
     """top main loop"""
 
-    collection_interval=DEFAULT_COLLECTION_INTERVAL
-    collection_filter=".*"
-    if(gstat_conf):
-        config = gstat_conf.get_config()
-        collection_interval=config['collection_interval']
-        collection_filter=config['collection_filter']
-
     global signal_received
 
     signal.signal(signal.SIGTERM, handlesignal)
@@ -82,7 +84,7 @@ def main():
 
     try:
         p_gstat = subprocess.Popen(
-            ["gstat", "-B", "-d", "-o", "-s", "-I"+str(collection_interval)+"s", "-f"+str(collection_filter)],
+            ["gstat", "-B", "-d", "-o", "-s", "-I"+str(COLLECTION_INTERVAL)+"s", "-f"+str(collection_filter)],
             stdout=subprocess.PIPE,
         )
     except OSError, e:

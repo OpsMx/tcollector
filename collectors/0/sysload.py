@@ -46,13 +46,24 @@ import os
 import platform
 
 from collectors.lib import utils
+from collectors.etc import opsmxconf
+
 
 try:
     from collectors.etc import sysload_conf
 except ImportError:
     sysload_conf = None
 
-DEFAULT_COLLECTION_INTERVAL=15
+collect_every_cpu=True
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    if(sysload_conf):
+        config = sysload_conf.get_config()
+        COLLECTION_INTERVAL=config['collection_interval']
+        collect_every_cpu=config['collect_every_cpu']
+    
+        COLLECTION_INTERVAL=15
 
 def convert_to_bytes(string):
     """Take a string in the form 1234K, and convert to bytes"""
@@ -78,13 +89,8 @@ def handlesignal(signum, stack):
 
 def main():
     """top main loop"""
+    
 
-    collection_interval=DEFAULT_COLLECTION_INTERVAL
-    collect_every_cpu=True
-    if(sysload_conf):
-        config = sysload_conf.get_config()
-        collection_interval=config['collection_interval']
-        collect_every_cpu=config['collect_every_cpu']
 
     global signal_received
 
@@ -95,23 +101,23 @@ def main():
         if platform.system() == "FreeBSD":
             if(collect_every_cpu):
                 p_top = subprocess.Popen(
-                    ["top", "-S", "-P", "-n", "-s"+str(collection_interval), "-dinfinity", "0"],
+                    ["top", "-S", "-P", "-n", "-s"+str(COLLECTION_INTERVAL), "-dinfinity", "0"],
                     stdout=subprocess.PIPE,
                 )
             else:
                 p_top = subprocess.Popen(
-                    ["top", "-S", "-n", "-s"+str(collection_interval), "-dinfinity", "0"],
+                    ["top", "-S", "-n", "-s"+str(COLLECTION_INTERVAL), "-dinfinity", "0"],
                     stdout=subprocess.PIPE,
                 )            
         else:
             if(collect_every_cpu):
                 p_top = subprocess.Popen(
-                    ["mpstat", "-P", "ALL", str(collection_interval)],
+                    ["mpstat", "-P", "ALL", str(COLLECTION_INTERVAL)],
                     stdout=subprocess.PIPE,
                 )
             else:
                 p_top = subprocess.Popen(
-                    ["mpstat", str(collection_interval)],
+                    ["mpstat", str(COLLECTION_INTERVAL)],
                     stdout=subprocess.PIPE,
                 )
     except OSError, e:
@@ -268,16 +274,16 @@ def main():
                 if(fields[i] == "Inuse"):
                     inuse=convert_to_bytes(fields[i-1])
                 if(fields[i] == "In"):
-                    inps=convert_to_bytes(fields[i-1])/collection_interval
+                    inps=convert_to_bytes(fields[i-1])/COLLECTION_INTERVAL
                 if(fields[i] == "Out"):
-                    outps=convert_to_bytes(fields[i-1])/collection_interval
+                    outps=convert_to_bytes(fields[i-1])/COLLECTION_INTERVAL
             print ("swap.total %s %s" % (timestamp, total))
             print ("swap.used %s %s" % (timestamp, used))
             print ("swap.free %s %s" % (timestamp, free))
             print ("swap.inuse %s %s" % (timestamp, inuse))
             print ("swap.inps %s %s" % (timestamp, inps))
             print ("swap.outps %s %s" % (timestamp, outps))
-
+        
         sys.stdout.flush()
 
     if signal_received is None:

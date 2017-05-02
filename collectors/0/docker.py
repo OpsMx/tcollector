@@ -11,17 +11,22 @@ import json
 
 from collectors.etc import docker_conf
 from collectors.lib import utils
+from collectors.etc import opsmxconf
 
 CONFIG = docker_conf.get_config()
 
-COLLECTION_INTERVAL = CONFIG['interval']
 CGROUP_PATH =CONFIG['cgroup_path']
 ENABLED = docker_conf.enabled()
 DOCKER_SOCK = CONFIG['socket_path']
 
-if not ENABLED:
-  sys.stderr.write("Docker collector is not enabled")
-  sys.exit(13)
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=CONFIG['interval']
+
+#if not ENABLED:
+#  sys.stderr.write("Docker collector is not enabled")
+#  sys.exit(13)
 
 # proc_names example:
 # $ cat cpuacct.stat

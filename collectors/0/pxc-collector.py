@@ -28,6 +28,7 @@ import sys
 import os.path
 from collectors.etc import pxcconf
 from collectors.lib import utils
+from collectors.etc import opsmxconf
 
 __author__     = "Kai Laufer"
 __version__    = "1.0.1"
@@ -35,13 +36,17 @@ __email__      = "mail@kai-laufer.de"
 
 """ You can find these functions and additional information in etc/pxcconf.py """
 prefix      = pxcconf.getPrefix() or "pxc" # Prefix for the collector, e.g. pxc -> pxc.wsrep_replicated_bytes
-interval    = pxcconf.getInterval() or 1 # Interval for checking MySQL statistics
 galeraFile  = pxcconf.getGaleraFile() or "/usr/lib/libgalera_smm.so" # Path to a galera specific file for ensuring that check won't run with a usual MySQL server. Default: "/usr/lib/libgalera_smm.so"
 login       = pxcconf.getUserPassword() # MySQL-User, MySQL-Password and MySQL-Host (localhost)
 myMap       = pxcconf.getKeyMap() or ( "wsrep_last_committed", "wsrep_replicated", "wsrep_repl_keys", "wsrep_local_commits" ) # Status variables which should be read
 mysqlUser   = login[0] or "root"
 mysqlPasswd = login[1] or ""
 mysqlHost   = login[2] or "localhost"
+
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL 
+else:
+    COLLECTION_INTERVAL=pxcconf.getInterval() or 1 # Interval for checking MySQL statistics
 
 def getRow():
         """ Test connection """

@@ -25,22 +25,24 @@ import time
 import errno
 
 from collectors.lib import utils
+from collectors.etc import opsmxconf
 
 try:
   from collectors.etc import ntpstat_conf
 except ImportError:
   ntpstat_conf = None
 
-DEFAULT_COLLECTION_INTERVAL=60
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    if(ntpstat_conf):
+        config = ntpstat_conf.get_config()
+        COLLECTION_INTERVAL=config['collection_interval']
+    else:
+        COLLECTION_INTERVAL=60
 
 def main():
     """ntpstats main loop"""
-
-    collection_interval=DEFAULT_COLLECTION_INTERVAL
-    if(ntpstat_conf):
-        config = ntpstat_conf.get_config()
-        collection_interval=config['collection_interval']
-
     utils.drop_privileges()
 
     while True:
@@ -69,7 +71,7 @@ def main():
             print >> sys.stderr, "ntpq -p, returned %r" % (ntp_proc.returncode)
 
         sys.stdout.flush()
-        time.sleep(collection_interval)
+        time.sleep(COLLECTION_INTERVAL)
 
 if __name__ == "__main__":
     main()

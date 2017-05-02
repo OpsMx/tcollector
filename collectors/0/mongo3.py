@@ -24,6 +24,12 @@ except ImportError:
 
 from collectors.lib import utils
 from collectors.etc import mongodb3_conf
+from collectors.etc import opsmxconf
+
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=15
 
 DB_NAMES = []
 CONFIG_CONN = []
@@ -32,7 +38,6 @@ REPLICA_CONN = []
 
 USER = ''
 PASS = ''
-INTERVAL = 15
 
 CONFIG_METRICS = (
     'asserts.msg',
@@ -316,7 +321,7 @@ def main():
             runReplSetGetStatus(conn['link'])
 
         sys.stdout.flush()
-        time.sleep(INTERVAL)
+        time.sleep(COLLECTION_INTERVAL)
 
 if __name__ == '__main__':
     sys.exit(main())

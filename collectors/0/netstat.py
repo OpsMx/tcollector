@@ -63,13 +63,17 @@ import sys
 import time
 
 from collectors.lib import utils
+from collectors.etc import opsmxconf
 
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=15
 
 def main():
     """Main loop"""
     sys.stdin.close()
 
-    interval = 15
     page_size = resource.getpagesize()
 
     try:
@@ -331,7 +335,7 @@ def main():
         parse_stats(snmpstats, snmp.name)
 
         sys.stdout.flush()
-        time.sleep(interval)
+        time.sleep(COLLECTION_INTERVAL)
 
 if __name__ == "__main__":
     sys.exit(main())

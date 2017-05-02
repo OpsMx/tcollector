@@ -22,7 +22,13 @@ except ImportError:
 
 from collectors.lib import utils
 from collectors.lib.hadoop_http import HadoopHttp
+from collectors.etc import opsmxconf
 
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=15
+    
 EMIT_REGION = True
 
 EXCLUDED_CONTEXTS = ("master")
@@ -76,7 +82,7 @@ def main(args):
     hbase_service = HBaseRegionserver()
     while True:
         hbase_service.emit()
-        time.sleep(15)
+        time.sleep(COLLECTION_INTERVAL)
     return 0
 
 

@@ -29,8 +29,12 @@ import stat
 import subprocess
 import csv
 from collectors.lib import utils
+from collectors.etc import opsmxconf
 
-COLLECTION_INTERVAL = 15
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=15
 
 # Which statistics to report. See Section 9.1 of the the following URL
 # for information:

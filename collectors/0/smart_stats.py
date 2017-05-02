@@ -23,13 +23,20 @@ import sys
 import time
 
 from collectors.lib import utils
+from collectors.etc import opsmxconf
 
 try:
     from collectors.etc import smart_stats_conf
 except ImportError:
     smart_stats_conf = None
 
-DEFAULT_COLLECTION_INTERVAL=120
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    if(smart_stats_conf):
+        COLLECTION_INTERVAL = smart_stats_conf.get_config()['collection_interval']
+    else:
+        COLLECTION_INTERVAL=120
 
 TWCLI = "/usr/sbin/tw_cli"
 ARCCONF = "/usr/local/bin/arcconf"
@@ -198,11 +205,6 @@ def process_output(drive, smart_output):
 def main():
   """main loop for SMART collector"""
 
-  collection_interval=DEFAULT_COLLECTION_INTERVAL
-  if(smart_stats_conf):
-    config = smart_stats_conf.get_config()
-    collection_interval=config['collection_interval']
-
   # Get the list of block devices.
   drives = [dev[5:] for dev in glob.glob("/dev/[hs]d[a-z]")]
   # Try FreeBSD drives if no block devices found
@@ -234,7 +236,7 @@ def main():
       process_output(drive, smart_output)
 
     sys.stdout.flush()
-    time.sleep(collection_interval)
+    time.sleep(COLLECTION_INTERVAL)
 
 
 if __name__ == "__main__":

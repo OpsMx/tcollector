@@ -26,8 +26,7 @@ from collectors.etc import opsmxconf
 if opsmxconf.OVERRIDE:
     COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
 else:
-    COLLECTION_INTERVAL=10
-
+    COLLECTION_INTERVAL=60
 NUMADIR = "/sys/devices/system/node"
 
 
@@ -95,6 +94,7 @@ def main():
     f_loadavg = open("/proc/loadavg", "r")
     f_entropy_avail = open("/proc/sys/kernel/random/entropy_avail", "r")
     f_interrupts = open("/proc/interrupts", "r")
+
     f_scaling = "/sys/devices/system/cpu/cpu%s/cpufreq/%s_freq"
     f_scaling_min  = dict([])
     f_scaling_max  = dict([])
@@ -112,6 +112,7 @@ def main():
 
     numastats = find_sysfs_numa_stats()
     utils.drop_privileges()
+
     while True:
         # proc.uptime
         f_uptime.seek(0)
@@ -125,26 +126,17 @@ def main():
         # proc.meminfo
         f_meminfo.seek(0)
         ts = int(time.time())
-        mem_util=dict()
-        mem_total=None
-        mem_free=None
         for line in f_meminfo:
             m = re.match("(\w+):\s+(\d+)\s+(\w+)", line)
             if m:
                 if m.group(3).lower() == 'kb':
                     # convert from kB to B for easier graphing
-                    value = float(m.group(2)) * 1024
+                    value = str(int(m.group(2)) * 1024)
                 else:
-                    value = float(m.group(2))
-                if m.group(1)=="MemTotal":
-                    mem_total=value
-                if m.group(1)=="MemFree":
-                    mem_free=value
-                print ("proc.meminfo.%s %d %d" % (m.group(1).lower(), ts, value))
-        if mem_free and mem_total:
-            percent=((mem_total-mem_free)/mem_total)*100
-            print("proc.meminfo.util %d %f" % (ts,percent))
-        
+                    value = m.group(2)
+                print ("proc.meminfo.%s %d %s"
+                        % (m.group(1).lower(), ts, value))
+
         # proc.vmstat
         f_vmstat.seek(0)
         ts = int(time.time())
@@ -164,7 +156,6 @@ def main():
             if not m:
                 continue
             if m.group(1).startswith("cpu"):
-                fields = m.group(2).split()
                 cpu_m = re.match("cpu(\d+)", m.group(1))
                 if cpu_m:
                     metric_percpu = '.percpu'
@@ -172,22 +163,14 @@ def main():
                 else:
                     metric_percpu = ''
                     tags = ''
-                    #CPU Utilization of CPU %
-                    # ['348826', '45244', '61469', '1544072', '31626', '4', '1295', '0', '0', '0']
-                    int_fields=map(float,fields)
-                    total_cpu=sum(int_fields)
-                    cpu_idle=sum(int_fields[3:5]) #Total CPU Idle Time since the boot
-                    cpu_time=total_cpu-cpu_idle #Total CPU Time since the boot
-                    cpu_percent=(cpu_time/total_cpu)*100
-                    print "proc.stat.cpu.util %d %s" % (ts, cpu_percent)
-            
+                fields = m.group(2).split()
                 cpu_types = ['user', 'nice', 'system', 'idle', 'iowait',
-                    'irq', 'softirq', 'steal', 'guest', 'guest_nice']
+                    'irq', 'softirq', 'guest', 'guest_nice']
 
                 # We use zip to ignore fields that don't exist.
                 for value, field_name in zip(fields, cpu_types):
-                    print "proc.stat.cpu%s %d %s type=%s%s" % (metric_percpu,ts, value, field_name, tags)
-                        
+                    print "proc.stat.cpu%s %d %s type=%s%s" % (metric_percpu,
+                        ts, value, field_name, tags)
             elif m.group(1) == "intr":
                 print ("proc.stat.intr %d %s"
                         % (ts, m.group(2).split()[0]))

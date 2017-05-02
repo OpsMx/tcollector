@@ -28,8 +28,13 @@ import sys
 import time
 
 from collectors.lib import utils
+from collectors.lib import utils
+from collectors.etc import opsmxconf
 
-COLLECTION_INTERVAL = 15  # seconds
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=15
 
 
 class ProcessTerminatedError(Exception):

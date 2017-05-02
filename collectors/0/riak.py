@@ -47,7 +47,12 @@ import time
 import urllib2
 
 from collectors.lib import utils
+from collectors.etc import opsmxconf
 
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=15
 MAP = {
     'vnode_gets_total': ('vnode.requests', 'type=get'),
     'vnode_puts_total': ('vnode.requests', 'type=put'),
@@ -83,7 +88,6 @@ def main():
     utils.drop_privileges()
     sys.stdin.close()
 
-    interval = 15
 
     def print_stat(metric, value, tags=""):
         if value is not None:
@@ -108,7 +112,7 @@ def main():
         req.close()
 
         sys.stdout.flush()
-        time.sleep(interval)
+        time.sleep(COLLECTION_INTERVAL)
 
 
 if __name__ == "__main__":

@@ -24,13 +24,18 @@ import os
 import time
 import socket
 import errno
+from collectors.etc import opsmxconf
 
 try:
   import psycopg2
 except ImportError:
   psycopg2 = None # handled in main()
 
-COLLECTION_INTERVAL = 15 # seconds
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=15
+
 CONNECT_TIMEOUT = 2 # seconds
 
 from collectors.lib import utils

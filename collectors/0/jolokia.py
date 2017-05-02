@@ -29,6 +29,7 @@ except ImportError:
     import json
 
 from collectors.lib import utils
+from collectors.etc import opsmxconf
 
 try:
     from pyjolokia import Jolokia, JolokiaError
@@ -41,6 +42,17 @@ try:
 except ImportError:
     jolokia_conf = None
 
+
+if not (jolokia_conf and jolokia_conf.enabled()):
+    utils.err("Jolokia collector disable by config")
+    sys.exit(13)
+
+CONFIG=jolokia_conf.get_config()
+
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=CONFIG['interval']
 
 class JolokiaCollector():
     """
@@ -169,12 +181,7 @@ class JolokiaCollector():
 
 
 def main():
-    if not (jolokia_conf and jolokia_conf.enabled()):
-        utils.err("Jolokia collector disable by config")
-        sys.exit(13)
     utils.drop_privileges()
-
-    CONFIG = jolokia_conf.get_config()
     instances = []
 
     for instance in CONFIG['instances']:
@@ -207,7 +214,7 @@ def main():
             i.process_data()
 
         try:
-            time.sleep(CONFIG['interval'])
+            time.sleep(COLLECTION_INTERVAL)
         except KeyboardInterrupt:
             break
     # End while True

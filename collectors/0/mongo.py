@@ -21,10 +21,16 @@ except ImportError:
     pymongo = None  # This is handled gracefully in main()
 
 from collectors.lib import utils
+from collectors.etc import opsmxconf
+
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=15
+
 
 HOST = 'localhost'
 PORT = 27017
-INTERVAL = 15
 METRICS = (
     'backgroundFlushing.average_ms',
     'backgroundFlushing.flushes',
@@ -86,7 +92,7 @@ def main():
             print 'mongo.%s %d %s' % (metric, ts, cur)
 
         sys.stdout.flush()
-        time.sleep(INTERVAL)
+        time.sleep(COLLECTION_INTERVAL)
 
 if __name__ == '__main__':
     sys.exit(main())

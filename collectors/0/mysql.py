@@ -27,8 +27,13 @@ except ImportError:
 
 from collectors.etc import mysqlconf
 from collectors.lib import utils
+from collectors.etc import opsmxconf
 
-COLLECTION_INTERVAL = 15  # seconds
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=15
+
 CONNECT_TIMEOUT = 2  # seconds
 # How frequently we try to find new databases.
 DB_REFRESH_INTERVAL = 60  # seconds

@@ -63,12 +63,20 @@ import sys
 import time
 from collectors.lib import utils
 from collectors.etc import redis_stats_conf
+from collectors.etc import opsmxconf
+
 
 try:
     import redis
     has_redis = True
 except ImportError:
     has_redis = False
+
+
+if opsmxconf.OVERRIDE:
+    COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
+else:
+    COLLECTION_INTERVAL=15
 
 # If we are root, drop privileges to this user, if necessary.  NOTE: if this is
 # not root, this MUST be the user that you run redis-server under.  If not, we
@@ -97,7 +105,7 @@ def main():
     sys.stdin.close()
 
     config = redis_stats_conf.get_config()
-    interval = config['collection_interval']
+    
 
     # we scan for instances here to see if there are any redis servers
     # running on this machine...
@@ -150,7 +158,7 @@ def main():
                 r.connection_pool.disconnect()
 
         sys.stdout.flush()
-        time.sleep(interval)
+        time.sleep(COLLECTION_INTERVAL)
 
 
 def scan_for_instances():
