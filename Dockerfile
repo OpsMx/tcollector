@@ -17,8 +17,9 @@ RUN apt-get install -y python-software-properties libmysqlclient-dev vim python-
 
 RUN pip install --upgrade pip
 RUN pip install MySQL-python pymongo psycopg2
+RUN apt-get install -y supervisor
+RUN printf "[supervisord]\nnodaemon=false" > /etc/supervisor/conf.d/supervisord.conf
 #RUN apt-get install -y apache2
-
 ################## OpsMx Tcollector ##################
 
 RUN mkdir -p /opt/tcollector/collectors
@@ -27,3 +28,5 @@ ADD tcollector /etc/init.d/tcollector
 ADD tcollector.py /opt/tcollector/tcollector.py
 RUN chmod 755 /etc/init.d/tcollector
 RUN update-rc.d tcollector defaults
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
