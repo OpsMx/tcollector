@@ -68,8 +68,6 @@ service tcollector stop
 service tcollector restart
 service tcollector uninstall
 ```
-### Pull The Docker Image!
+### tcollector in Docker
 `docker pull opsmx11/tcollector`
 
-
-[![Build Status](https://travis-ci.org/OpenTSDB/tcollector.svg?branch=master)](https://travis-ci.org/OpenTSDB/tcollector)
