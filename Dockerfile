@@ -29,4 +29,5 @@ ADD tcollector.py /opt/tcollector/tcollector.py
 RUN chmod 755 /etc/init.d/tcollector
 RUN update-rc.d tcollector defaults
 
-ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+ENTRYPOINT ["/usr/bin/supervisord"]
+CMD ["-c", "/etc/supervisor/conf.d/supervisord.conf"]
