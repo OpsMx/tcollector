@@ -4,7 +4,6 @@
 
 import os
 import re
-import socket
 import sys
 import time
 import json
@@ -18,6 +17,7 @@ CONFIG = docker_conf.get_config()
 CGROUP_PATH =CONFIG['cgroup_path']
 ENABLED = docker_conf.enabled()
 DOCKER_SOCK = CONFIG['socket_path']
+DOCKER_ROOT_DIR=CONFIG['docker_root_dir']
 
 if opsmxconf.OVERRIDE:
     COLLECTION_INTERVAL=opsmxconf.GLOBAL_COLLECTORS_INTERVAL
@@ -58,42 +58,18 @@ proc_names_to_agg = {
 }
 
 def getnameandimage(containerid):
-
-    # Retrieve container json configuration file
-    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    sock.settimeout(5)
+    container_info=os.path.join(DOCKER_ROOT_DIR,"containers",containerid,"config.v2.json")
+    with open(container_info) as f:
+        data = json.load(f)
     try:
-        r = sock.connect_ex(DOCKER_SOCK)
-        if (r != 0):
-            print >>sys.stderr, "Can not connect to %s" % (DOCKER_SOCK)
-        else:
-            message = 'GET /containers/' + containerid + '/json HTTP/1.1\n\n'
-            sock.sendall(message)
-            json_data = ""
-            # "\r\n0\r\n" is raised on last chunk. See RFC 7230.
-            while (re.search("\r\n0\r\n", json_data) == None):
-                json_data += sock.recv(4096)
-            sock.close()
+        containernames[containerid] = data["Name"].lstrip('/')
+    except:
+        print >>sys.stderr, containerid+" has no Name field"
+    try:
+        containerimages[containerid] = data["Config"]["Image"].replace(':', '_')
+    except:
+        print >>sys.stderr, containerid+" has no Image field"
 
-            # Retrieve container name and image
-            m = re.search("{(.+)}", json_data)
-            if m:
-                json_data = "{"+m.group(1)+"}"
-            try:
-                data = json.loads(json_data)
-                try:
-                    containernames[containerid] = data["Name"].lstrip('/')
-                except:
-                    print >>sys.stderr, containerid+" has no Name field"
-                try:
-                    containerimages[containerid] = data["Config"]["Image"].replace(':', '_')
-                except:
-                    print >>sys.stderr, containerid+" has no Image field"
-            except:
-                print >>sys.stderr, "Can not load json"
-
-    except socket.timeout, e:
-        print >>sys.stderr, "Socket: %s" % (e,)
 
 def senddata(datatosend, containerid):
     if datatosend:
@@ -106,7 +82,8 @@ def senddata(datatosend, containerid):
     sys.stdout.flush()
 
 def readdockerstats(path, containerid):
-
+    #print "Path",path
+    #print "COntainer",containerid
     # update containername and containerimage if needed
     if ((containerid not in containernames) or (containerid not in containerimages)):
         getnameandimage(containerid)
@@ -117,6 +94,7 @@ def readdockerstats(path, containerid):
         and ((file_stat in proc_names.keys()) or (file_stat in proc_names_to_agg.keys()))):
             try:
                 f_stat = open(path+"/"+file_stat)
+                #print "====>",path+"/"+file_stat
             except IOError, e:
                 print >>sys.stderr, "Failed to open input file: %s" % (e,)
                 return 1
@@ -171,7 +149,7 @@ def main():
     """docker_cpu main loop"""
     global containernames
     global containerimages
-    utils.drop_privileges()
+    #utils.drop_privileges()
     cache=0
     while True:
 
@@ -185,11 +163,14 @@ def main():
 
         if os.path.isdir(CGROUP_PATH):
             for level1 in os.listdir(CGROUP_PATH):
-                if (os.path.isdir(CGROUP_PATH + "/"+level1+"/docker")\
+                #print "PATH====>",level1
+                if (os.path.isdir(CGROUP_PATH + "/"+level1+"/docker")): #\
                 # /cgroup/cpu and /cgroup/cpuacct are often links to /cgroup/cpu,cpuacct
-                and not (((level1 == "cpu,cpuacct") or (level1 == "cpuacct")) and (os.path.isdir(CGROUP_PATH + "/cpu/docker")))):
+                #and not (((level1 == "cpu,cpuacct") or (level1 == "cpuacct")) and (os.path.isdir(CGROUP_PATH + "/cpu/docker")))):
                     for level2 in os.listdir(CGROUP_PATH + "/"+level1+"/docker"):
                         if os.path.isdir(CGROUP_PATH + "/"+level1+"/docker/"+level2):
+                            #print "LEVEL1",level1
+                            #print "LEVEL2",level2
                             readdockerstats(CGROUP_PATH + "/"+level1+"/docker/"+level2, level2)
                 else:
                     # If Docker cgroup is handled by slice
