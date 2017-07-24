@@ -32,7 +32,7 @@ def get_config():
     'interval': 10,
     'socket_path': '/var/run/docker.sock',
     'cgroup_path': cgroup_path,
-    'docker_root_dir':'/var/lib/docker/containers'
+    'docker_root_dir':'/var/lib/docker/containers',
     'proc':'/opsmx/proc' # The host /proc should mount tp /opsmx/proc
   }
 
