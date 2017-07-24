@@ -16,7 +16,7 @@ normal=$(tput sgr0)
 blink=$(tput blink)
 yellow=$(tput setaf 3)
 
-SCRIPT="python /opt/tcollector/tcollector.py"
+SCRIPT="python /opt/tcollector/tcollector.py -d"
 NAME="tcollector"
 PIDFILE="/var/run/$NAME.pid"
 LOGFILE="/var/log/$NAME.log"
