@@ -64,7 +64,7 @@ def get_defaults():
         'port': 4343,
         'ssl': False,
         'http': False,
-        'daemonize': True,
+        'daemonize': False,
         'url_path': '/api/put',
         'chunking': True,
         'pidfile': '/var/run/tcollector.pid',
