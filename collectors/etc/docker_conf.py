@@ -12,9 +12,6 @@
 # of the GNU Lesser General Public License along with this program.  If not,
 # see <http://www.gnu.org/licenses/>.
 
-def enabled():
-  return False
-
 def get_config():
   """Configuration for the Docker collector
 
@@ -32,9 +29,11 @@ def get_config():
     cgroup_path = '/sys/fs/cgroup'
 
   config = {
-    'interval': 15,
+    'interval': 10,
     'socket_path': '/var/run/docker.sock',
-    'cgroup_path': cgroup_path
+    'cgroup_path': cgroup_path,
+    'docker_root_dir':'/var/lib/docker/containers'
+    'proc':'/opsmx/proc' # The host /proc should mount tp /opsmx/proc
   }
 
   return config
