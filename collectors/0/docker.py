@@ -3,7 +3,6 @@
 # Author : OpsMx
 # Description : Retrieves Docker/Kubernetes container/POD Metrics
 # NOTE : Written from scratch
-
 import os
 import re
 import sys
@@ -22,12 +21,9 @@ if opsmxconf.OVERRIDE:
 else:
     COLLECTION_INTERVAL = CONFIG['interval']
 
-
-CGROUP_PATH = "/sys/fs/cgroup"
-DOCKER_SOCK = "/var/run/docker.sock"
-DOCKER_DIR = "/var/lib/docker/containers"
-PROC_DIR = "/proc"
-COLLECTION_INTERVAL = 2
+CGROUP_PATH = CONFIG["cgroup_path"]
+DOCKER_DIR = CONFIG["docker_root_dir"]
+PROC_DIR = CONFIG['proc']
 MEMORY = {"cache": None, "rss": None,
           "mapped_file": None, "pgfault": None,
           "pgmajfault": None, "swap": None,
@@ -73,9 +69,14 @@ class PreChecks:
         elif os.path.exists(os.path.join(CGROUP_PATH, "blkio/docker")):
             self.type = "docker"
         else:
-            print >> sys.stderr, "Not able to find pseudo files directory. Check docker daemon is running? or any check any \
-                    containers are running?"
-            exit(1)
+            self.type = None
+
+    @staticmethod
+    def is_files_exists():
+        if os.path.exists(CGROUP_PATH) and os.path.exists(DOCKER_DIR) and os.path.exists(PROC_DIR):
+            return True
+        else:
+            return False
 
     def find_dir_list(self):
         cpu_cpuacct = os.path.join(CGROUP_PATH, "cpu,cpuacct", self.type)
@@ -128,7 +129,7 @@ def get_info(path, ids):  # 'ids' is list type
                     entity_id = None
             else:
                 name = data["Name"].lstrip('/')
-                entity_id = data["ID"]
+                entity_id = data["ID"][:12]
             container_pids.append(pid)
     return (str(entity_id), (str(name), container_pids))
 
@@ -189,6 +190,12 @@ def main(config, docker_type):
 
 
 if __name__ == "__main__":
-    check = PreChecks()
+    while 1:
+        check = PreChecks()
+        if check.type and check.is_files_exists():
+            break
+        print >> sys.stderr, "Not able to find pseudo files directory. 1. Check docker daemon is running? or \
+                                2. Check any containers are running? 3. Check Mount directories"
+        time.sleep(60)  # If Docker daemon is not running, check it for every 60 sec.
     check.find_dir_list()
     main(check.config, check.type)
