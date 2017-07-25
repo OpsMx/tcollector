@@ -71,5 +71,5 @@ service tcollector uninstall
 ### tcollector in Docker
 `docker pull opsmx11/tcollector`
 
-`docker run --net=host --privileged --volume=/var/lib/docker/:/var/lib/docker:ro --volume=/:/opsmx/  --volume=/sys/fs/cgroup/:/sys/fs/cgroup/:ro -it --name=opsmx-collector -d  opsmx11/tcollector`
+`docker run --net=host --volume=/var/lib/docker/:/var/lib/docker:ro --volume=/sys/fs/cgroup/:/sys/fs/cgroup/:ro -it --name=opsmx-collector -d  opsmx11/tcollector`
 
